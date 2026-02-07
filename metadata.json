@@ -1,0 +1,5 @@
+{
+  "name": "Van Tharp Position Sizing Analyzer",
+  "description": "A dashboard for analyzing trading system expectancy and risk using Van Tharp's R-Multiples and Monte Carlo simulations.",
+  "requestFramePermissions": []
+}
