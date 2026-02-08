@@ -1,179 +1,150 @@
-# Van Tharp Position Sizing Analyzer
+# 📊 Van Tharp Position Sizing Analyzer
 
-一个基于 Van Tharp 的 R-Multiple 理论和蒙特卡洛模拟的交易系统分析工具，帮助交易者评估系统期望收益、风险控制和最优仓位管理。
+![Version](https://img.shields.io/badge/version-1.0.0-indigo)
+![License](https://img.shields.io/badge/license-MIT-blue)
+![React](https://img.shields.io/badge/React-19-61DAFB?logo=react)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0-3178C6?logo=typescript)
 
-![Van Tharp Analyzer](https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6)
+> **"We don't trade the markets, we trade our beliefs about the markets." — Dr. Van K. Tharp**
 
-## 功能特性
+A powerful, offline-capable web application designed for quantitative traders and system developers. It leverages **Van Tharp's R-Multiple concepts** and **Monte Carlo simulations** to analyze trading system expectancy, evaluate risk, and optimize position sizing strategies.
 
-### 双模式数据输入
-- **频率模式 (Frequency Mode)**: 输入不同 R 值的分布频率，适合理论系统分析
-- **原始盈亏模式 (Raw PnL Mode)**: 直接粘贴历史交易盈亏数据，自动计算 R 单位
+---
 
-### 核心系统指标
-- **胜率 (Win Rate)**: 盈利交易占比
-- **盈亏比 (Profit Factor)**: 平均盈利/平均亏损
-- **期望值 (Expectancy)**: 每笔交易的期望收益
-- **系统质量数 (SQN)**: 基于 Van Tharp 的系统质量评估
-- **标准差 (Standard Deviation)**: 收益波动性
+## 🌟 Key Features
 
-### 蒙特卡洛模拟
-运行 10,000+ 次模拟，分析：
-- 最大回撤分布 (Max Drawdown)
-- 最大盈利分布 (Max Profit)
-- 最终收益分布 (Final Result)
-- 最大连续亏损/盈利次数
-- 回撤持续时间
+### 1. Dual Input Modes
+- **Frequency Distribution (Scenario Mode):** Manually define your system's edge by entering counts of R-multiples (e.g., "5 trades of -1R", "2 trades of 5R"). Includes fun presets like "Welfare Lottery" or "Trend Following".
+- **Raw P&L Import:** Paste a list of raw dollar profit/loss amounts (from Excel/CSV). The app automatically calculates your 1R unit (based on average loss) and converts data into R-Multiples.
 
-### 最优仓位计算 (Optimal F)
-通过遍历不同风险比例 (0.1% - 30%)，找到：
-- 最佳平均收益仓位
-- 最佳中位数收益仓位
-- 最高成功率仓位
-- 最低爆仓风险仓位
+### 2. Deep System Analysis
+- **SQN® (System Quality Number):** automatically calculated with visual grading (Poor to Super System).
+- **Expectancy & Standard Deviation:** Mathematical breakdown of your system's reliability.
+- **Confidence Intervals:** 1σ, 2σ, and 3σ projections for future trade expectations.
 
-支持两种风险模式：
-- **固定分数法 (Fixed Fractional)**: 基于当前权益的百分比
-- **固定初始法 (Fixed Initial)**: 基于初始权益的百分比
+### 3. Advanced Monte Carlo Simulation
+- Runs **10,000+ simulations** to generate probability cones.
+- **Visualizers:**
+  - 📉 **Max Drawdown:** Histogram distribution of potential worst-case scenarios.
+  - 📈 **Equity Curves:** Visualizes Best, Worst, Average, and Max Drawdown paths.
+  - 🎲 **Streak Analysis:** Probability of consecutive wins and losses.
+- **Risk Metrics:** Calculates "Probability of Ruin" and "95% Drawdown Duration".
 
-### 风险相关性控制
-支持多品种/多策略组合风险评估：
-- 强相关 (0.9)
-- 中等相关 (0.5)
-- 弱相关 (0.1)
-- 部分对冲 (-0.5)
-- 强力对冲 (-0.8)
+### 4. Position Sizing & Risk Management
+- **Portfolio Heat:** Calculates the maximum recommended total risk exposure based on system quality and survival constraints.
+- **Optimal F (Kelly-style):** Iterative analysis to find the geometric growth optimal risk percentage.
+- **Correlation Matrix Pruning:** An advanced widget to allocate risk across multiple assets using a "Dual-Constraint Pruning" algorithm to handle correlations and hedging.
 
-### 数据导入导出
-- 支持 Excel (.xlsx) 导入/导出
-- 支持截图保存分析结果
-- 内置多种预设模板（彩票、趋势跟踪等）
+### 5. Utilities
+- **Excel Import/Export:** Save your distribution data or analysis results.
+- **Screenshot:** One-click export of the dashboard analysis to a PNG image.
 
-## 技术栈
+---
 
-- **框架**: React 19 + TypeScript
-- **构建工具**: Vite 6
-- **图表**: Recharts
-- **样式**: Tailwind CSS
-- **图标**: Lucide React
-- **Excel 处理**: SheetJS (xlsx)
-- **截图**: html2canvas
+## 🚀 Getting Started
 
-## 快速开始
+### Prerequisites
+- Node.js (v16 or higher)
+- npm or yarn
 
-### 环境要求
-- Node.js 18+
+### Installation
 
-### 安装依赖
-```bash
-npm install
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/van-tharp-analyzer.git
+   cd van-tharp-analyzer
+   ```
 
-### 开发模式
-```bash
-npm run dev
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### 构建生产版本
-```bash
-npm run build
-```
+3. **Run the development server**
+   ```bash
+   npm run dev
+   ```
 
-### 预览生产构建
-```bash
-npm run preview
-```
+4. Open your browser to `http://localhost:3000` (or the port shown in your terminal).
 
-## 使用指南
+---
 
-### 1. 输入交易数据
+## 📚 Concepts Explained
 
-**频率模式示例**:
-| 次数 | R 值 |
-|------|------|
-| 5    | -1   |
-| 3    | 2    |
-| 2    | 5    |
+### What is R?
+**R** stands for **Risk**. It is the amount of money you are willing to lose on a single trade (Initial Risk).
+- If you risk $100 and lose $100, that is a **-1R** trade.
+- If you risk $100 and make $300, that is a **+3R** trade.
 
-**原始盈亏模式示例**:
-```
--100
-150
--50
-200
--75
-300
-...
-```
+### What is SQN?
+The **System Quality Number (SQN)** measures the relationship between your expectancy (average R) and the standard deviation of your R-multiples.
+- **SQN < 1.0**: Hard to trade (likely unprofitable).
+- **SQN 2.0 - 3.0**: Good system.
+- **SQN > 5.0**: Holy Grail / Super system.
 
-### 2. 配置模拟参数
-- 模拟次数: 建议 10,000 次
-- 每笔模拟交易数: 建议 100 笔
+### Monte Carlo Simulation
+Historical backtests show only *one* sequence of trades. Monte Carlo simulation shuffles your trades thousands of times to show *what could happen* if the order of wins and losses changes. This helps identify if a system is robust or just lucky.
 
-### 3. 运行模拟
-点击"运行模拟"按钮，系统将生成：
-- 系统质量评估
-- 风险指标分析
-- 收益分布图表
-- 资金曲线展示
+---
 
-### 4. 最优仓位分析
-在"最优仓位分析"标签页中：
-1. 设置成功/失败阈值（如翻倍/亏损 25%）
-2. 选择风险计算模式
-3. 运行分析，查看最佳仓位建议
+## 🛠️ Technology Stack
 
-## R-Multiple 理论简介
+- **Frontend Framework:** React 19
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Charting:** Recharts
+- **Icons:** Lucide React
+- **Data Handling:** XLSX (SheetJS)
+- **Export:** html2canvas
 
-R-Multiple 是 Van Tharp 提出的交易评估方法：
-- **1R** = 单笔交易的初始风险（平均亏损金额）
-- 盈利 = 盈利金额 / 1R
-- 亏损 = 亏损金额 / 1R（通常为 -1）
+---
 
-这种方法统一了不同资金规模的交易评估标准。
+## 📂 Project Structure
 
-## 项目结构
-
-```
-Van-Tharp-Position-Sizing-Analyzer/
-├── App.tsx                 # 主应用组件
-├── index.tsx               # 入口文件
-├── types.ts                # TypeScript 类型定义
+```text
+/
 ├── components/
-│   ├── InputSection.tsx    # 数据输入面板
-│   └── Dashboard.tsx       # 分析结果仪表盘
+│   ├── InputSection.tsx    # Left sidebar for data entry and config
+│   └── Dashboard.tsx       # Main visualization area (Charts, Metrics, Widgets)
 ├── utils/
-│   └── calculations.ts     # 核心计算逻辑
-├── index.html              # HTML 模板
-├── vite.config.ts          # Vite 配置
-└── tsconfig.json           # TypeScript 配置
+│   └── calculations.ts     # Core math logic (Monte Carlo, Optimal F, Stats)
+├── types.ts                # TypeScript interfaces
+├── App.tsx                 # Main application entry
+├── index.html              # HTML entry point
+└── ...
 ```
 
-## 核心算法
+---
 
-### 蒙特卡洛模拟
-```typescript
-for (let i = 0; i < totalSimulations; i++) {
-  for (let t = 0; t < tradesPerSimulation; t++) {
-    const r = pool[randomIndex]; // 随机抽样
-    currentEquity += r;
-    // 跟踪最大回撤、连续亏损等指标
-  }
-}
-```
+## 🧠 Risk Management Algorithms
 
-### 最优 F 计算
-遍历风险比例 f (0.1% - 30%)，对每个 f 运行模拟：
-- 计算成功率、爆仓率
-- 计算平均收益、中位数收益
-- 选择最优的 f 值
+The app features a sophisticated **Risk Allocation Widget** (`Dashboard.tsx`) that solves the problem of how much risk to assign to correlated assets.
 
-## 许可证
+**Logic:**
+1. **Initialize:** Start with max risk per asset.
+2. **Dual-Constraint Check:** It monitors both *Total Nominal Exposure* and *Portfolio Volatility*.
+3. **Smart Pruning:** If limits are exceeded, it iteratively reduces position sizes. It prioritizes cutting assets that contribute most to risk while preserving "hedge" positions (negatively correlated assets).
 
-MIT License
+---
 
-## 致谢
+## 🤝 Contributing
 
-- [Van K. Tharp](https://www.vantharp.com/) - 交易系统分析理论
-- [Recharts](https://recharts.org/) - 图表库
-- [Tailwind CSS](https://tailwindcss.com/) - 样式框架
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the project.
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+---
+
+<div align="center">
+  <sub>Built with ❤️ by Ain</sub>
+</div>
