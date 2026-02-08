@@ -67,6 +67,16 @@ A powerful, offline-capable web application designed for quantitative traders an
    npm run dev
    ```
 
+### 🛠️ Technology Stack
+
+- **Frontend Framework:** React 19
+- **Language:** TypeScript
+- **Styling:** Tailwind CSS
+- **Charting:** Recharts
+- **Icons:** Lucide React
+- **Data Processing:** SheetJS (xlsx)
+- **Export:** html2canvas
+
 ### 🧠 Algorithms
 
 The app features a sophisticated **Risk Allocation Widget** (`Dashboard.tsx`) that solves the problem of how much risk to assign to correlated assets.
@@ -84,7 +94,7 @@ The app features a sophisticated **Risk Allocation Widget** (`Dashboard.tsx`) th
 
 ## 🇨🇳 简体中文
 
-> **"我们交易的不是市场，而是我们就市场的信念。" — 范·K·萨普博士 (Dr. Van K. Tharp)**
+> **"我们交易的并非市场本身，而是我们对市场的认知。" — 范·K·萨普博士 (Dr. Van K. Tharp)**
 
 一款专为量化交易者和系统开发者设计的离线 Web 应用程序。它利用 **R 倍数 (R-Multiples)** 概念和 **蒙特卡洛模拟 (Monte Carlo Simulations)**，帮助您分析交易系统的数学期望、评估潜在风险，并寻找最优的头寸规模策略。
 
@@ -134,6 +144,16 @@ The app features a sophisticated **Risk Allocation Widget** (`Dashboard.tsx`) th
    npm run dev
    ```
    然后打开浏览器访问 `http://localhost:3000`。
+
+### 🛠️ 技术栈
+
+- **前端框架:** React 19
+- **开发语言:** TypeScript
+- **样式方案:** Tailwind CSS
+- **图表库:** Recharts
+- **图标组件:** Lucide React
+- **数据处理:** SheetJS (xlsx)
+- **导出工具:** html2canvas
 
 ### 📚 核心概念解释
 
