@@ -17,6 +17,24 @@ interface InputSectionProps {
   setSimulationConfig: (config: SimulationConfig) => void;
 }
 
+const parseStrictNumber = (value: string): number | null => {
+  const trimmed = value.trim();
+  if (trimmed === '') return null;
+
+  const numericPattern = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+  if (!numericPattern.test(trimmed)) return null;
+
+  const num = Number(trimmed);
+  return Number.isFinite(num) ? num : null;
+};
+
+const extractStrictNumbersFromText = (text: string): number[] => (
+  text
+    .split(/[\n,;]+/)
+    .map(token => parseStrictNumber(token))
+    .filter((n): n is number => n !== null)
+);
+
 // --- Smart Input Component ---
 // Allows typing "-", empty string, decimals without snapping back to 0 immediately
 const SmartNumberInput = ({
@@ -51,20 +69,20 @@ const SmartNumberInput = ({
     const parsed = parseFloat(newVal);
     // Only push to parent if it's a valid number and not an incomplete state (like "-" or "1.")
     if (!isNaN(parsed)) {
-       if (!newVal.endsWith('.') && newVal !== '-' && newVal !== '-0') {
-          onChange(parsed);
-       }
+      if (!newVal.endsWith('.') && newVal !== '-' && newVal !== '-0') {
+        onChange(parsed);
+      }
     } else if (newVal === '') {
-       // Optional: Decide if empty should be 0 or keep as is. 
-       // For this app, safer to treat as 0 in data but keep empty in UI until blur
-       onChange(0);
+      // Optional: Decide if empty should be 0 or keep as is. 
+      // For this app, safer to treat as 0 in data but keep empty in UI until blur
+      onChange(0);
     }
   };
 
   const handleBlur = () => {
     let parsed = parseFloat(text);
     if (isNaN(parsed)) parsed = 0;
-    
+
     // Apply min constraint if defined (e.g. for count > 0)
     if (min !== undefined && parsed < min) parsed = min;
 
@@ -287,7 +305,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
       XLSX.utils.book_append_sheet(wb, ws, "FrequencyData");
       XLSX.writeFile(wb, "van_tharp_frequency.xlsx");
     } else {
-      const lines = rawPnlText.split(/[\n,;]+/).map(s => s.trim()).filter(s => s !== '').map(parseFloat).filter(n => !isNaN(n));
+      const lines = extractStrictNumbersFromText(rawPnlText);
       const data = lines.map(v => ({ PnL: v }));
       const ws = XLSX.utils.json_to_sheet(data);
       const wb = XLSX.utils.book_new();
@@ -320,7 +338,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
             // Flexible column matching
             const keys = Object.keys(row);
             const values = Object.values(row) as number[];
-            
+
             let count = 1;
             let rValue = 0;
 
@@ -334,7 +352,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
             return { id: crypto.randomUUID(), count: isNaN(count) ? 1 : count, rValue: isNaN(rValue) ? 0 : rValue };
           });
-          
+
           if (newFreqData.length > 0) {
             setFrequencyData(newFreqData);
           } else {
@@ -344,13 +362,13 @@ export const InputSection: React.FC<InputSectionProps> = ({
           // Raw PnL Mode
           const nums: number[] = [];
           data.forEach(row => {
-             const values = Object.values(row);
-             values.forEach(v => {
-               const n = parseFloat(String(v));
-               if(!isNaN(n)) nums.push(n);
-             });
+            const values = Object.values(row);
+            values.forEach(v => {
+              const n = parseStrictNumber(String(v));
+              if (n !== null) nums.push(n);
+            });
           });
-          
+
           if (nums.length > 0) {
             setRawPnlText(nums.join('\n'));
           } else {
@@ -361,7 +379,7 @@ export const InputSection: React.FC<InputSectionProps> = ({
         console.error(err);
         alert("文件读取失败，请确保是有效的 .xlsx 文件。");
       }
-      
+
       if (fileInputRef.current) fileInputRef.current.value = '';
     };
     reader.readAsArrayBuffer(file);
@@ -370,46 +388,40 @@ export const InputSection: React.FC<InputSectionProps> = ({
   // Determine which preset is currently selected by matching data
   const getCurrentPresetId = () => {
     if (mode !== AppMode.FREQUENCY) return 'custom';
-    
+
     for (const preset of PRESETS) {
-        if (preset.id === 'custom') continue;
-        if (frequencyData.length !== preset.data.length) continue;
-        
-        const sortedCurrent = [...frequencyData].sort((a, b) => a.rValue - b.rValue);
-        const sortedPreset = [...preset.data].sort((a, b) => a.rValue - b.rValue);
-        
-        const isMatch = sortedCurrent.every((row, i) => 
-            row.count === sortedPreset[i].count && 
-            Math.abs(row.rValue - sortedPreset[i].rValue) < 0.001
-        );
-        
-        if (isMatch) return preset.id;
+      if (preset.id === 'custom') continue;
+      if (frequencyData.length !== preset.data.length) continue;
+
+      const sortedCurrent = [...frequencyData].sort((a, b) => a.rValue - b.rValue);
+      const sortedPreset = [...preset.data].sort((a, b) => a.rValue - b.rValue);
+
+      const isMatch = sortedCurrent.every((row, i) =>
+        row.count === sortedPreset[i].count &&
+        Math.abs(row.rValue - sortedPreset[i].rValue) < 0.001
+      );
+
+      if (isMatch) return preset.id;
     }
     return 'custom';
   };
 
   const handlePresetChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const presetId = e.target.value;
-    
+
     const preset = PRESETS.find(p => p.id === presetId);
     if (preset) {
-        const newData = preset.data.map(d => ({
-            ...d,
-            id: crypto.randomUUID()
-        }));
-        setFrequencyData(newData);
+      const newData = preset.data.map(d => ({
+        ...d,
+        id: crypto.randomUUID()
+      }));
+      setFrequencyData(newData);
     }
   };
 
   // Helper to count valid pnl lines
   const getPnlCount = () => {
-    return rawPnlText
-      .split(/[\n,;]+/)
-      .map(s => s.trim())
-      .filter(s => s !== '')
-      .map(parseFloat)
-      .filter(n => !isNaN(n))
-      .length;
+    return extractStrictNumbersFromText(rawPnlText).length;
   };
 
   const pnlCount = getPnlCount();
@@ -418,26 +430,26 @@ export const InputSection: React.FC<InputSectionProps> = ({
     <div className="flex flex-col h-full bg-white border-r border-gray-200 shadow-sm transition-all duration-300">
       <div className="p-6 border-b border-gray-100 flex items-center justify-between">
         <div>
-           <div className="flex items-center gap-2 mb-1">
-             <h1 className="text-xl font-bold text-gray-800">Van Tharp Analyzer</h1>
-             {/* Author Badge */}
-             {!imageLoadError ? (
-               <img 
-                src="/by-ain-badge.png" 
-                alt="By Ain" 
+          <div className="flex items-center gap-2 mb-1">
+            <h1 className="text-xl font-bold text-gray-800">Van Tharp Analyzer</h1>
+            {/* Author Badge */}
+            {!imageLoadError ? (
+              <img
+                src="/by-ain-badge.png"
+                alt="By Ain"
                 className="h-7 w-auto object-contain ml-2 select-none"
-                onError={() => setImageLoadError(true)} 
-               />
-             ) : (
-               // Fallback CSS Badge
-               <span className="px-2 py-0.5 rounded bg-gradient-to-b from-gray-100 to-gray-300 text-gray-700 border border-gray-400 text-[10px] font-extrabold tracking-widest shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.8)] select-none ml-2" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}>
-                  BY AIN
-               </span>
-             )}
-           </div>
-           <p className="text-xs text-gray-500">头寸规模与 R 倍数分析 (Position Sizing & R-Multiple)</p>
+                onError={() => setImageLoadError(true)}
+              />
+            ) : (
+              // Fallback CSS Badge
+              <span className="px-2 py-0.5 rounded bg-gradient-to-b from-gray-100 to-gray-300 text-gray-700 border border-gray-400 text-[10px] font-extrabold tracking-widest shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.8)] select-none ml-2" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}>
+                BY AIN
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-gray-500">头寸规模与 R 倍数分析 (Position Sizing & R-Multiple)</p>
         </div>
-        <button 
+        <button
           onClick={onToggleSidebar}
           className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
           title="折叠侧边栏 (Collapse)"
@@ -452,21 +464,19 @@ export const InputSection: React.FC<InputSectionProps> = ({
           <div className="flex bg-gray-100 p-1 rounded-lg">
             <button
               onClick={() => setMode(AppMode.FREQUENCY)}
-              className={`flex-1 py-2 px-2 text-xs font-medium rounded-md transition-all ${
-                mode === AppMode.FREQUENCY 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 py-2 px-2 text-xs font-medium rounded-md transition-all ${mode === AppMode.FREQUENCY
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               频率分布 (Frequency)
             </button>
             <button
               onClick={() => setMode(AppMode.RAW_PNL)}
-              className={`flex-1 py-2 px-2 text-xs font-medium rounded-md transition-all ${
-                mode === AppMode.RAW_PNL
-                  ? 'bg-white text-indigo-600 shadow-sm' 
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
+              className={`flex-1 py-2 px-2 text-xs font-medium rounded-md transition-all ${mode === AppMode.RAW_PNL
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
+                }`}
             >
               原始盈亏 (Raw P&L)
             </button>
@@ -474,83 +484,83 @@ export const InputSection: React.FC<InputSectionProps> = ({
         </div>
 
         {mode === AppMode.FREQUENCY && (
-            <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
-               <label className="flex items-center text-xs font-semibold text-indigo-700 mb-2">
-                 <Sparkles size={12} className="mr-1.5" />
-                 探索预设模型 (Presets)
-               </label>
-               <select 
-                  value={getCurrentPresetId()} 
-                  onChange={handlePresetChange}
-                  className="block w-full rounded-md border-indigo-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 pl-2 pr-8"
-               >
-                  {PRESETS.map(p => (
-                      <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-               </select>
-            </div>
+          <div className="mb-4 bg-indigo-50 border border-indigo-100 rounded-lg p-3">
+            <label className="flex items-center text-xs font-semibold text-indigo-700 mb-2">
+              <Sparkles size={12} className="mr-1.5" />
+              探索预设模型 (Presets)
+            </label>
+            <select
+              value={getCurrentPresetId()}
+              onChange={handlePresetChange}
+              className="block w-full rounded-md border-indigo-200 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm py-1.5 pl-2 pr-8"
+            >
+              {PRESETS.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </div>
         )}
 
         {/* Import/Export Toolbar */}
         <div className="flex space-x-2 mb-4">
-           <input 
-              type="file" 
-              accept=".xlsx, .xls" 
-              ref={fileInputRef} 
-              className="hidden" 
-              onChange={handleImportFile}
-           />
-           <button 
-              onClick={handleImportClick}
-              className="flex-1 flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-           >
-              <Upload size={14} className="mr-1.5" /> 导入 (Import)
-           </button>
-           <button 
-              onClick={handleExport}
-              className="flex-1 flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-           >
-              <Download size={14} className="mr-1.5" /> 导出 (Export)
-           </button>
+          <input
+            type="file"
+            accept=".xlsx, .xls"
+            ref={fileInputRef}
+            className="hidden"
+            onChange={handleImportFile}
+          />
+          <button
+            onClick={handleImportClick}
+            className="flex-1 flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            <Upload size={14} className="mr-1.5" /> 导入 (Import)
+          </button>
+          <button
+            onClick={handleExport}
+            className="flex-1 flex items-center justify-center py-1.5 px-3 border border-gray-300 rounded text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+          >
+            <Download size={14} className="mr-1.5" /> 导出 (Export)
+          </button>
         </div>
 
         {mode === AppMode.FREQUENCY ? (
           <div>
-             <div className="grid grid-cols-6 gap-2 mb-2 text-xs font-semibold text-gray-500 uppercase">
-                <div className="col-span-2">次数 (Count)</div>
-                <div className="col-span-3">R 倍数 (R-Multiple)</div>
-                <div className="col-span-1"></div>
-             </div>
-             <div className="space-y-2">
-                {frequencyData.map((row) => (
-                  <div key={row.id} className="grid grid-cols-6 gap-2 items-center">
-                    <SmartNumberInput
-                      min={1}
-                      value={row.count}
-                      onChange={(val) => updateFrequencyRow(row.id, 'count', val)}
-                      className="col-span-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                    />
-                    <SmartNumberInput
-                      step={1} 
-                      value={row.rValue}
-                      onChange={(val) => updateFrequencyRow(row.id, 'rValue', val)}
-                      className="col-span-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                    />
-                    <button
-                      onClick={() => removeFrequencyRow(row.id)}
-                      className="col-span-1 flex items-center justify-center text-red-400 hover:text-red-600"
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                ))}
-             </div>
-             <button
-                onClick={addFrequencyRow}
-                className="mt-4 flex items-center justify-center w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-sm font-medium text-gray-600 hover:border-indigo-500 hover:text-indigo-500 transition-colors"
-             >
-                <Plus size={16} className="mr-2" /> 添加行 (Add Row)
-             </button>
+            <div className="grid grid-cols-6 gap-2 mb-2 text-xs font-semibold text-gray-500 uppercase">
+              <div className="col-span-2">次数 (Count)</div>
+              <div className="col-span-3">R 倍数 (R-Multiple)</div>
+              <div className="col-span-1"></div>
+            </div>
+            <div className="space-y-2">
+              {frequencyData.map((row) => (
+                <div key={row.id} className="grid grid-cols-6 gap-2 items-center">
+                  <SmartNumberInput
+                    min={1}
+                    value={row.count}
+                    onChange={(val) => updateFrequencyRow(row.id, 'count', val)}
+                    className="col-span-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  />
+                  <SmartNumberInput
+                    step={1}
+                    value={row.rValue}
+                    onChange={(val) => updateFrequencyRow(row.id, 'rValue', val)}
+                    className="col-span-3 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                  />
+                  <button
+                    onClick={() => removeFrequencyRow(row.id)}
+                    className="col-span-1 flex items-center justify-center text-red-400 hover:text-red-600"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={addFrequencyRow}
+              className="mt-4 flex items-center justify-center w-full py-2 border-2 border-dashed border-gray-300 rounded-md text-sm font-medium text-gray-600 hover:border-indigo-500 hover:text-indigo-500 transition-colors"
+            >
+              <Plus size={16} className="mr-2" /> 添加行 (Add Row)
+            </button>
           </div>
         ) : (
           <div>
@@ -565,23 +575,23 @@ export const InputSection: React.FC<InputSectionProps> = ({
               提示 (Tip): 您可以直接粘贴 Excel 列数据，或者使用上方按钮导入文件。系统将自动计算 1R。(Paste Excel column data or Import. 1R is auto-calculated.)
             </p>
             <div className="mt-3">
-                {pnlCount < 30 ? (
-                    <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-md text-amber-700 text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                        <AlertTriangle size={14} className="flex-shrink-0 mt-0.5 text-amber-600" />
-                        <div className="leading-tight">
-                            <span className="font-bold text-amber-800">注意:</span> 当前仅有 <span className="text-red-600 font-extrabold text-sm mx-0.5">{pnlCount}</span> 笔有效数据，必须提供至少 <span className="text-red-600 font-extrabold text-sm mx-0.5">30</span> 笔交易记录才能运行模拟。<br/>
-                            <span className="opacity-80 block mt-1">(Warning: Found <span className="text-red-600 font-bold">{pnlCount}</span> valid entries. At least <span className="text-red-600 font-bold">30</span> trades are required.)</span>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-700 text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
-                        <CheckCircle size={14} className="flex-shrink-0 mt-0.5 text-emerald-600" />
-                        <div className="leading-tight">
-                            <span className="font-bold text-emerald-800">就绪:</span> 已输入 <span className="text-emerald-700 font-extrabold text-sm mx-0.5">{pnlCount}</span> 笔有效数据，满足模拟要求。<br/>
-                            <span className="opacity-80 block mt-1">(Ready: Found <span className="text-emerald-700 font-bold">{pnlCount}</span> valid entries. Simulation can be run.)</span>
-                        </div>
-                    </div>
-                )}
+              {pnlCount < 30 ? (
+                <div className="p-2.5 bg-amber-50 border border-amber-200 rounded-md text-amber-700 text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <AlertTriangle size={14} className="flex-shrink-0 mt-0.5 text-amber-600" />
+                  <div className="leading-tight">
+                    <span className="font-bold text-amber-800">注意:</span> 当前仅有 <span className="text-red-600 font-extrabold text-sm mx-0.5">{pnlCount}</span> 笔有效数据，必须提供至少 <span className="text-red-600 font-extrabold text-sm mx-0.5">30</span> 笔交易记录才能运行模拟。<br />
+                    <span className="opacity-80 block mt-1">(Warning: Found <span className="text-red-600 font-bold">{pnlCount}</span> valid entries. At least <span className="text-red-600 font-bold">30</span> trades are required.)</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-md text-emerald-700 text-xs flex items-start gap-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                  <CheckCircle size={14} className="flex-shrink-0 mt-0.5 text-emerald-600" />
+                  <div className="leading-tight">
+                    <span className="font-bold text-emerald-800">就绪:</span> 已输入 <span className="text-emerald-700 font-extrabold text-sm mx-0.5">{pnlCount}</span> 笔有效数据，满足模拟要求。<br />
+                    <span className="opacity-80 block mt-1">(Ready: Found <span className="text-emerald-700 font-bold">{pnlCount}</span> valid entries. Simulation can be run.)</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -589,43 +599,43 @@ export const InputSection: React.FC<InputSectionProps> = ({
 
       <div className="p-6 border-t border-gray-200 bg-gray-50 space-y-4">
         <div>
-           <div className="flex justify-between items-center mb-1">
-             <label className="text-xs font-semibold text-gray-600 uppercase">每轮模拟交易次数 (Trades/Sim)</label>
-             <span className="text-xs font-mono text-indigo-600 font-bold">{simulationConfig.tradesPerSimulation}</span>
-           </div>
-           <input 
-             type="range" 
-             min="100" 
-             max="1000" 
-             step="50"
-             value={simulationConfig.tradesPerSimulation}
-             onChange={(e) => setSimulationConfig({...simulationConfig, tradesPerSimulation: parseInt(e.target.value)})}
-             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-           />
-           <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>100</span>
-              <span>1000</span>
-           </div>
+          <div className="flex justify-between items-center mb-1">
+            <label className="text-xs font-semibold text-gray-600 uppercase">每轮模拟交易次数 (Trades/Sim)</label>
+            <span className="text-xs font-mono text-indigo-600 font-bold">{simulationConfig.tradesPerSimulation}</span>
+          </div>
+          <input
+            type="range"
+            min="100"
+            max="1000"
+            step="50"
+            value={simulationConfig.tradesPerSimulation}
+            onChange={(e) => setSimulationConfig({ ...simulationConfig, tradesPerSimulation: parseInt(e.target.value) })}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+          />
+          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+            <span>100</span>
+            <span>1000</span>
+          </div>
         </div>
 
         <div>
-           <div className="flex justify-between items-center mb-1">
-             <label className="text-xs font-semibold text-gray-600 uppercase">总模拟轮数 (Total Sims)</label>
-             <span className="text-xs font-mono text-indigo-600 font-bold">{simulationConfig.totalSimulations.toLocaleString()}</span>
-           </div>
-           <input 
-             type="range" 
-             min="10000" 
-             max="100000" 
-             step="5000"
-             value={simulationConfig.totalSimulations}
-             onChange={(e) => setSimulationConfig({...simulationConfig, totalSimulations: parseInt(e.target.value)})}
-             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-           />
-           <div className="flex justify-between text-[10px] text-gray-400 mt-1">
-              <span>10k</span>
-              <span>100k</span>
-           </div>
+          <div className="flex justify-between items-center mb-1">
+            <label className="text-xs font-semibold text-gray-600 uppercase">总模拟轮数 (Total Sims)</label>
+            <span className="text-xs font-mono text-indigo-600 font-bold">{simulationConfig.totalSimulations.toLocaleString()}</span>
+          </div>
+          <input
+            type="range"
+            min="10000"
+            max="100000"
+            step="5000"
+            value={simulationConfig.totalSimulations}
+            onChange={(e) => setSimulationConfig({ ...simulationConfig, totalSimulations: parseInt(e.target.value) })}
+            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+          />
+          <div className="flex justify-between text-[10px] text-gray-400 mt-1">
+            <span>10k</span>
+            <span>100k</span>
+          </div>
         </div>
 
         <button

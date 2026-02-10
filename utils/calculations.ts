@@ -5,6 +5,17 @@ const HISTOGRAM_BINS = 30; // Number of bars in the histogram
 const MAX_EQUITY_CAP = 1e100; // Cap equity to prevent Infinity -> NaN issues (1 googol is enough for any UI)
 
 // --- Helper Functions ---
+const parseStrictNumber = (value: string): number | null => {
+  const trimmed = value.trim();
+  if (trimmed === '') return null;
+
+  // Accept plain decimals and scientific notation, reject partial parses like "123abc".
+  const numericPattern = /^[+-]?(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?$/;
+  if (!numericPattern.test(trimmed)) return null;
+
+  const num = Number(trimmed);
+  return Number.isFinite(num) ? num : null;
+};
 
 const calculateStats = (values: number[]) => {
   if (values.length === 0) return { avg: 0, median: 0, min: 0, max: 0, p5: 0, p95: 0 };
@@ -87,14 +98,16 @@ export const calculateBasicMetrics = (rMultiples: number[], n: number, rUnitSize
   }
 
   const positiveR = rMultiples.filter(r => r > 0);
-  const negativeR = rMultiples.filter(r => r <= 0);
+  const negativeR = rMultiples.filter(r => r < 0);
 
   const winRate = positiveR.length / count;
   
-  const avgWin = positiveR.length > 0 ? positiveR.reduce((a, b) => a + b, 0) / positiveR.length : 0;
-  const avgLoss = negativeR.length > 0 ? negativeR.reduce((a, b) => a + b, 0) / negativeR.length : 0;
-  
-  const profitFactor = avgLoss === 0 ? (avgWin > 0 ? 999 : 0) : Math.abs(avgWin / avgLoss);
+  const grossProfit = positiveR.reduce((a, b) => a + b, 0);
+  const grossLossAbs = Math.abs(negativeR.reduce((a, b) => a + b, 0));
+
+  // Profit Factor = gross profit / gross loss (absolute).
+  // If there are no losses, use a high sentinel value for UI compatibility.
+  const profitFactor = grossLossAbs === 0 ? (grossProfit > 0 ? 999 : 0) : grossProfit / grossLossAbs; 
   
   const sum = rMultiples.reduce((a, b) => a + b, 0);
   const expectancy = sum / count;
@@ -120,7 +133,10 @@ export const calculateBasicMetrics = (rMultiples: number[], n: number, rUnitSize
 };
 
 export const parseRawData = (inputText: string): { rMultiples: number[]; rUnit: number; validCount: number; error?: string } => {
-  const rawValues = inputText.split(/[\n,;]+/).map(s => s.trim()).filter(s => s !== '').map(parseFloat).filter(n => !isNaN(n));
+  const rawValues = inputText
+    .split(/[\n,;]+/)
+    .map(s => parseStrictNumber(s))
+    .filter((n): n is number => n !== null);
 
   if (rawValues.length < 30) {
     return { rMultiples: [], rUnit: 0, validCount: 0, error: `数据不足。当前仅找到 ${rawValues.length} 笔交易，最少需要 30 笔。` };

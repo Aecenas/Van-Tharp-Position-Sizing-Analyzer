@@ -19,7 +19,7 @@
 
 > **"We don't trade the markets, we trade our beliefs about the markets." — Dr. Van K. Tharp**
 
-A powerful, offline-capable web application designed for quantitative traders and system developers. It leverages **Van Tharp's R-Multiple concepts** and **Monte Carlo simulations** to analyze trading system expectancy, evaluate risk, and optimize position sizing strategies.
+A powerful web application designed for quantitative traders and system developers. It leverages **Van Tharp's R-Multiple concepts** and **Monte Carlo simulations** to analyze trading system expectancy, evaluate risk, and optimize position sizing strategies.
 
 ### 🌟 Key Features
 
@@ -38,7 +38,7 @@ A powerful, offline-capable web application designed for quantitative traders an
   - 📉 **Max Drawdown:** Histogram distribution of potential worst-case scenarios.
   - 📈 **Equity Curves:** Visualizes Best, Worst, Average, and Max Drawdown paths.
   - 🎲 **Streak Analysis:** Probability of consecutive wins and losses.
-- **Risk Metrics:** Calculates "Probability of Ruin" and "95% Drawdown Duration".
+- **Risk Metrics:** Calculates "Probability of Profit", "Reward/Risk Ratio", and "95% Drawdown Duration".
 
 #### 4. Position Sizing & Risk Management
 - **Portfolio Heat:** Calculates the maximum recommended total risk exposure based on system quality and survival constraints.
@@ -115,7 +115,7 @@ The app features a sophisticated **Risk Allocation Widget** (`Dashboard.tsx`) th
   - 📉 **最大回撤分布:** 直方图展示潜在的最坏回撤情况。
   - 📈 **权益曲线:** 包含最优、最差、平均以及最大回撤路径的模拟曲线。
   - 🎲 **连胜/连败分析:** 连续亏损或盈利的概率统计。
-- **风险指标:** 计算“破产概率 (Risk of Ruin)”及“95%置信度下的回撤恢复期”。
+- **风险指标:** 计算“盈利概率 (Probability of Profit)”、“回报/风险比 (Reward/Risk)”及“95%置信度下的回撤恢复期”。
 
 #### 4. 头寸规模与风控
 - **组合热度 (Portfolio Heat):** 基于系统质量 (SQN) 和生存约束，计算账户建议的最大总风险敞口。
