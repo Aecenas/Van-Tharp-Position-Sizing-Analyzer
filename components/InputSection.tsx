@@ -278,7 +278,6 @@ export const InputSection: React.FC<InputSectionProps> = ({
   setSimulationConfig
 }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [imageLoadError, setImageLoadError] = useState(false);
 
   const addFrequencyRow = () => {
     setFrequencyData([...frequencyData, { id: crypto.randomUUID(), count: 1, rValue: 0 }]);
@@ -433,19 +432,9 @@ export const InputSection: React.FC<InputSectionProps> = ({
           <div className="flex items-center gap-2 mb-1">
             <h1 className="text-xl font-bold text-gray-800">Van Tharp Analyzer</h1>
             {/* Author Badge */}
-            {!imageLoadError ? (
-              <img
-                src="/by-ain-badge.png"
-                alt="By Ain"
-                className="h-7 w-auto object-contain ml-2 select-none"
-                onError={() => setImageLoadError(true)}
-              />
-            ) : (
-              // Fallback CSS Badge
-              <span className="px-2 py-0.5 rounded bg-gradient-to-b from-gray-100 to-gray-300 text-gray-700 border border-gray-400 text-[10px] font-extrabold tracking-widest shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.8)] select-none ml-2" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}>
-                BY AIN
-              </span>
-            )}
+            <span className="px-2 py-0.5 rounded bg-gradient-to-b from-gray-100 to-gray-300 text-gray-700 border border-gray-400 text-[10px] font-extrabold tracking-widest shadow-[0_1px_2px_rgba(0,0,0,0.1),inset_0_1px_0_rgba(255,255,255,0.8)] select-none ml-2" style={{ textShadow: '0 1px 0 rgba(255,255,255,0.5)' }}>
+              BY AIN
+            </span>
           </div>
           <p className="text-xs text-gray-500">头寸规模与 R 倍数分析 (Position Sizing & R-Multiple)</p>
         </div>
